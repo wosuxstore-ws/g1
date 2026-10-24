@@ -38,7 +38,22 @@ jobs:
       - run: flutter pub get
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          set -o pipefail
+          flutter build apk --release 2>&1 | tee build.log
+
+      - name: Show the real error (runs only if the build failed)
+        if: failure()
+        run: |
+          echo "=========== THE REAL ERROR ==========="
+          grep -n -B3 -A30 "What went wrong" build.log | head -n 120 || tail -n 100 build.log
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
